@@ -1,0 +1,9 @@
+{
+  "feature": "execore:three_layer_ore_vein",
+  "placement": [
+    {
+      "type": "minecraft:count",
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "execore:block/template_ore_stone",
+  "textures": {
+    "base": "minecraft:block/deepslate",
+    "overlay": "execore:block/ore_template",
+    "particle": "minecraft:block/deepslate"
+  }
+}

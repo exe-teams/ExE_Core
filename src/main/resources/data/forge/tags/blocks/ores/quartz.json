@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    { "id": "execore:quartz_ore", "required": false },
+    { "id": "execore:deepslate_quartz_ore", "required": false },
+    { "id": "execore:dense_quartz_ore", "required": false },
+    { "id": "execore:dense_deepslate_quartz_ore", "required": false }
+  ]
+}
