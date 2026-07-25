@@ -20,6 +20,8 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.AddPackFindersEvent;
@@ -35,6 +37,11 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
+import top.theillusivec4.curios.api.CuriosApi;
+import io.github.sponeru.execore.client.ClientFlightController;
+import io.github.sponeru.execore.client.FlightRadialOverlay;
+import io.github.sponeru.execore.flight.AirborneMiningCharmItem;
+import io.github.sponeru.execore.network.ModNetwork;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -58,6 +65,9 @@ public class ExampleMod
     public static final RegistryObject<Feature<NoneFeatureConfiguration>> THREE_LAYER_ORE_VEIN = FEATURES.register(
             "three_layer_ore_vein",
             () -> new OreVeinGenerator(NoneFeatureConfiguration.CODEC));
+    public static final RegistryObject<Item> AIRBORNE_MINING_CHARM = ITEMS.register(
+            "airborne_mining_charm",
+            () -> new AirborneMiningCharmItem(new Item.Properties().stacksTo(1)));
     public static final Map<String, RegistryObject<Block>> MATERIAL_BLOCKS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> MATERIAL_ITEMS = new LinkedHashMap<>();
     private static boolean materialBlocksRegistered;
@@ -89,8 +99,12 @@ public class ExampleMod
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
-        // Some common setup code
         LOGGER.info("ExE Core common setup");
+        ModNetwork.register();
+        event.enqueueWork(() -> {
+            AirborneMiningCharmItem charm = (AirborneMiningCharmItem) AIRBORNE_MINING_CHARM.get();
+            CuriosApi.registerCurio(charm, charm);
+        });
 
         if (Config.logDirtBlock)
             LOGGER.info("DIRT BLOCK >> {}", ForgeRegistries.BLOCKS.getKey(Blocks.DIRT));
@@ -105,11 +119,14 @@ public class ExampleMod
     {
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS)
             MATERIAL_ITEMS.values().forEach(event::accept);
+
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
+            event.accept(AIRBORNE_MINING_CHARM);
     }
 
     private void addPackFinders(AddPackFindersEvent event)
     {
-        if (event.getPackType() != PackType.CLIENT_RESOURCES)
+        if (event.getPackType() != PackType.CLIENT_RESOURCES && event.getPackType() != PackType.SERVER_DATA)
         {
             return;
         }
@@ -124,7 +141,7 @@ public class ExampleMod
                         Component.literal("ExE Core Generated Assets"),
                         true,
                         supplier,
-                        PackType.CLIENT_RESOURCES,
+                        event.getPackType(),
                         Pack.Position.TOP,
                         PackSource.BUILT_IN);
 
@@ -153,12 +170,25 @@ public class ExampleMod
     public static class ClientModEvents
     {
         @SubscribeEvent
+        @SuppressWarnings("removal")
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             // Some client setup code
             LOGGER.info("ExE Core client setup");
             LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
             event.enqueueWork(() -> MATERIAL_BLOCKS.values().forEach(block -> ItemBlockRenderTypes.setRenderLayer(block.get(), RenderType.cutout())));
+        }
+
+        @SubscribeEvent
+        public static void registerKeyMappings(RegisterKeyMappingsEvent event)
+        {
+            ClientFlightController.registerKeyMappings(event);
+        }
+
+        @SubscribeEvent
+        public static void registerGuiOverlays(RegisterGuiOverlaysEvent event)
+        {
+            event.registerAboveAll("flight_radial_menu", FlightRadialOverlay::render);
         }
 
         @SubscribeEvent

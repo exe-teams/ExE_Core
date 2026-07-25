@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    { "id": "execore:iron_ore", "required": false },
-    { "id": "execore:deepslate_iron_ore", "required": false },
-    { "id": "execore:dense_iron_ore", "required": false },
-    { "id": "execore:dense_deepslate_iron_ore", "required": false }
-  ]
-}
