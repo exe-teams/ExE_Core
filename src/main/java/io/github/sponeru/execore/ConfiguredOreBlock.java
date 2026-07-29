@@ -34,6 +34,11 @@ public class ConfiguredOreBlock extends Block
         return material.color();
     }
 
+    public boolean isDense()
+    {
+        return dense;
+    }
+
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params)
     {

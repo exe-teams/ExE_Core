@@ -42,6 +42,7 @@ import io.github.sponeru.execore.client.ClientFlightController;
 import io.github.sponeru.execore.client.FlightRadialOverlay;
 import io.github.sponeru.execore.flight.AirborneMiningCharmItem;
 import io.github.sponeru.execore.network.ModNetwork;
+import io.github.sponeru.execore.scanner.OreScannerItem;
 
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -68,6 +69,9 @@ public class ExampleMod
     public static final RegistryObject<Item> AIRBORNE_MINING_CHARM = ITEMS.register(
             "airborne_mining_charm",
             () -> new AirborneMiningCharmItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<Item> ORE_SCANNER = ITEMS.register(
+            "ore_scanner",
+            () -> new OreScannerItem(new Item.Properties().durability(256)));
     public static final Map<String, RegistryObject<Block>> MATERIAL_BLOCKS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> MATERIAL_ITEMS = new LinkedHashMap<>();
     private static boolean materialBlocksRegistered;
@@ -121,7 +125,10 @@ public class ExampleMod
             MATERIAL_ITEMS.values().forEach(event::accept);
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
+        {
             event.accept(AIRBORNE_MINING_CHARM);
+            event.accept(ORE_SCANNER);
+        }
     }
 
     private void addPackFinders(AddPackFindersEvent event)
