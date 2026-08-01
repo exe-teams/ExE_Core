@@ -9,9 +9,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Stream;
 
 public final class GeneratedAssetPack
@@ -50,14 +48,10 @@ public final class GeneratedAssetPack
         Path blockstates = namespace.resolve("blockstates");
         Path blockModels = namespace.resolve("models").resolve("block");
         Path itemModels = namespace.resolve("models").resolve("item");
-        Path lang = namespace.resolve("lang");
 
         Files.createDirectories(blockstates);
         Files.createDirectories(blockModels);
         Files.createDirectories(itemModels);
-        Files.createDirectories(lang);
-
-        Map<String, String> translations = new TreeMap<>();
         List<String> pickaxeMineable = new ArrayList<>();
         List<String> needsStoneTool = new ArrayList<>();
         List<String> needsIronTool = new ArrayList<>();
@@ -70,14 +64,14 @@ public final class GeneratedAssetPack
 
             if (material.generateOre())
             {
-                addVariant(blockstates, blockModels, itemModels, translations, pickaxeMineable, materialBlocks, material.id() + "_ore", "template_ore_stone");
-                addVariant(blockstates, blockModels, itemModels, translations, pickaxeMineable, materialBlocks, "deepslate_" + material.id() + "_ore", "template_ore_deepslate");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, material.id() + "_ore", "template_ore_stone");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, "deepslate_" + material.id() + "_ore", "template_ore_deepslate");
             }
 
             if (material.generateDenseOre())
             {
-                addVariant(blockstates, blockModels, itemModels, translations, pickaxeMineable, materialBlocks, "dense_" + material.id() + "_ore", "template_dense_ore_stone");
-                addVariant(blockstates, blockModels, itemModels, translations, pickaxeMineable, materialBlocks, "dense_deepslate_" + material.id() + "_ore", "template_dense_ore_deepslate");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, "dense_" + material.id() + "_ore", "template_dense_ore_stone");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, "dense_deepslate_" + material.id() + "_ore", "template_dense_ore_deepslate");
             }
 
             if (!materialBlocks.isEmpty())
@@ -87,7 +81,6 @@ public final class GeneratedAssetPack
             }
         }
 
-        Files.writeString(lang.resolve("en_us.json"), langJson(translations));
         writeTags(root, pickaxeMineable, needsStoneTool, needsIronTool, needsDiamondTool, forgeOreTags);
         generatedRoot = root;
         return root;
@@ -109,20 +102,19 @@ public final class GeneratedAssetPack
         }
     }
 
-    private static void addVariant(Path blockstates, Path blockModels, Path itemModels, Map<String, String> translations, List<String> pickaxeMineable, List<String> materialBlocks, String blockId, String template) throws IOException
+    private static void addVariant(Path blockstates, Path blockModels, Path itemModels, List<String> pickaxeMineable, List<String> materialBlocks, String blockId, String template) throws IOException
     {
-        writeVariant(blockstates, blockModels, itemModels, translations, blockId, template);
+        writeVariant(blockstates, blockModels, itemModels, blockId, template);
         String blockLocation = ExampleMod.MODID + ":" + blockId;
         pickaxeMineable.add(blockLocation);
         materialBlocks.add(blockLocation);
     }
 
-    private static void writeVariant(Path blockstates, Path blockModels, Path itemModels, Map<String, String> translations, String blockId, String template) throws IOException
+    private static void writeVariant(Path blockstates, Path blockModels, Path itemModels, String blockId, String template) throws IOException
     {
         Files.writeString(blockstates.resolve(blockId + ".json"), blockstateJson(blockId));
         Files.writeString(blockModels.resolve(blockId + ".json"), blockModelJson(template));
         Files.writeString(itemModels.resolve(blockId + ".json"), itemModelJson(blockId));
-        translations.put("block." + ExampleMod.MODID + "." + blockId, englishName(blockId));
     }
 
     private static void addToolTierBlocks(String materialId, List<String> materialBlocks, List<String> needsStoneTool, List<String> needsIronTool, List<String> needsDiamondTool)
@@ -206,54 +198,6 @@ public final class GeneratedAssetPack
     private static String itemModelJson(String blockId)
     {
         return "{\"parent\":\"" + ExampleMod.MODID + ":block/" + blockId + "\"}";
-    }
-
-    private static String langJson(Map<String, String> translations)
-    {
-        StringBuilder builder = new StringBuilder("{\n");
-        int index = 0;
-
-        for (Map.Entry<String, String> entry : translations.entrySet())
-        {
-            builder.append("  \"")
-                    .append(entry.getKey())
-                    .append("\": \"")
-                    .append(entry.getValue())
-                    .append("\"");
-
-            if (++index < translations.size())
-            {
-                builder.append(',');
-            }
-
-            builder.append('\n');
-        }
-
-        return builder.append("}\n").toString();
-    }
-
-    private static String englishName(String blockId)
-    {
-        String[] words = blockId.split("_");
-        StringBuilder builder = new StringBuilder();
-
-        for (String word : words)
-        {
-            if (word.isBlank())
-            {
-                continue;
-            }
-
-            if (!builder.isEmpty())
-            {
-                builder.append(' ');
-            }
-
-            builder.append(word.substring(0, 1).toUpperCase(Locale.ROOT))
-                    .append(word.substring(1));
-        }
-
-        return builder.toString();
     }
 
     private enum ToolTier

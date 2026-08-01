@@ -1,6 +1,8 @@
 package io.github.sponeru.execore;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
@@ -16,17 +18,20 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class ConfiguredOreBlock extends Block
 {
     private final MaterialConfig.MaterialDefinition material;
     private final boolean dense;
+    private final boolean deepslate;
 
-    public ConfiguredOreBlock(Properties properties, MaterialConfig.MaterialDefinition material, boolean dense)
+    public ConfiguredOreBlock(Properties properties, MaterialConfig.MaterialDefinition material, boolean dense, boolean deepslate)
     {
         super(properties);
         this.material = material;
         this.dense = dense;
+        this.deepslate = deepslate;
     }
 
     public int oreColor()
@@ -37,6 +42,38 @@ public class ConfiguredOreBlock extends Block
     public boolean isDense()
     {
         return dense;
+    }
+
+    @Override
+    public MutableComponent getName()
+    {
+        String variant = dense
+                ? (deepslate ? "dense_deepslate_ore" : "dense_ore")
+                : (deepslate ? "deepslate_ore" : "ore");
+        Component materialName = Component.translatableWithFallback(
+                "material." + ExampleMod.MODID + "." + material.id(),
+                englishName(material.id()));
+        return Component.translatable("block." + ExampleMod.MODID + "." + variant, materialName);
+    }
+
+    private static String englishName(String id)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (String word : id.split("_"))
+        {
+            if (word.isBlank())
+            {
+                continue;
+            }
+            if (!builder.isEmpty())
+            {
+                builder.append(' ');
+            }
+            builder.append(word.substring(0, 1).toUpperCase(Locale.ROOT)).append(word.substring(1));
+        }
+
+        return builder.toString();
     }
 
     @Override

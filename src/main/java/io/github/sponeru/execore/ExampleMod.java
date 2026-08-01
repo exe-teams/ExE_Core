@@ -254,7 +254,7 @@ public class ExampleMod
 
     private static void registerMaterialBlock(String id, MaterialConfig.MaterialDefinition material, boolean dense, boolean deepslate)
     {
-        RegistryObject<Block> block = BLOCKS.register(id, () -> new ConfiguredOreBlock(oreProperties(deepslate), material, dense));
+        RegistryObject<Block> block = BLOCKS.register(id, () -> new ConfiguredOreBlock(oreProperties(deepslate), material, dense, deepslate));
         RegistryObject<Item> item = ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
 
         MATERIAL_BLOCKS.put(id, block);

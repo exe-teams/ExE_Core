@@ -38,5 +38,20 @@
   "flight_speed.execore.precise": "精密 50%",
   "flight_speed.execore.normal": "標準 100%",
   "flight_speed.execore.fast": "高速 200%",
-  "flight_speed.execore.extreme": "超高速 400%"
+  "flight_speed.execore.extreme": "超高速 400%",
+  "block.execore.ore": "%s鉱石",
+  "block.execore.deepslate_ore": "深層%s鉱石",
+  "block.execore.dense_ore": "高密度%s鉱石",
+  "block.execore.dense_deepslate_ore": "高密度深層%s鉱石",
+  "material.execore.iron": "鉄",
+  "material.execore.copper": "銅",
+  "material.execore.gold": "金",
+  "material.execore.redstone": "レッドストーン",
+  "material.execore.lapis": "ラピスラズリ",
+  "material.execore.emerald": "エメラルド",
+  "material.execore.diamond": "ダイヤモンド",
+  "material.execore.coal": "石炭",
+  "material.execore.quartz": "ネザークォーツ",
+  "material.execore.ancient_debris": "古代の残骸",
+  "material.execore.netherite": "ネザライト"
 }
