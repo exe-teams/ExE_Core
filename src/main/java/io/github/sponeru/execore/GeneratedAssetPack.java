@@ -169,12 +169,15 @@ public final class GeneratedAssetPack
         Path forgeBlockTags = root.resolve("data").resolve("forge").resolve("tags").resolve("blocks");
         Path forgeOreTagPath = forgeBlockTags.resolve("ores");
         Path forgeRawMaterialTagPath = root.resolve("data").resolve("forge").resolve("tags").resolve("items").resolve("raw_materials");
-        Path denseOreTagPath = root.resolve("data").resolve(ExampleMod.MODID).resolve("tags").resolve("blocks").resolve("dense_ores");
+        Path exeCoreTags = root.resolve("data").resolve(ExampleMod.MODID).resolve("tags");
+        Path denseOreBlockTagPath = exeCoreTags.resolve("blocks").resolve("dense_ores");
+        Path denseOreItemTagPath = exeCoreTags.resolve("items").resolve("dense_ores");
 
         Files.createDirectories(minecraftBlockTags.resolve("mineable"));
         Files.createDirectories(forgeOreTagPath);
         Files.createDirectories(forgeRawMaterialTagPath);
-        Files.createDirectories(denseOreTagPath);
+        Files.createDirectories(denseOreBlockTagPath);
+        Files.createDirectories(denseOreItemTagPath);
 
         Files.writeString(minecraftBlockTags.resolve("mineable").resolve("pickaxe.json"), tagJson(pickaxeMineable));
         Files.writeString(minecraftBlockTags.resolve("needs_stone_tool.json"), tagJson(needsStoneTool));
@@ -196,7 +199,9 @@ public final class GeneratedAssetPack
 
         for (Map.Entry<String, List<String>> entry : denseOreTags.entrySet())
         {
-            Files.writeString(denseOreTagPath.resolve(entry.getKey() + ".json"), tagJson(entry.getValue()));
+            String json = tagJson(entry.getValue());
+            Files.writeString(denseOreBlockTagPath.resolve(entry.getKey() + ".json"), json);
+            Files.writeString(denseOreItemTagPath.resolve(entry.getKey() + ".json"), json);
         }
     }
 
