@@ -74,6 +74,7 @@ public class ExampleMod
             () -> new OreScannerItem(new Item.Properties().durability(256)));
     public static final Map<String, RegistryObject<Block>> MATERIAL_BLOCKS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> MATERIAL_ITEMS = new LinkedHashMap<>();
+    public static final Map<String, RegistryObject<Item>> RAW_MATERIAL_ITEMS = new LinkedHashMap<>();
     private static boolean materialBlocksRegistered;
 
     public ExampleMod(FMLJavaModLoadingContext context)
@@ -123,6 +124,9 @@ public class ExampleMod
     {
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS)
             MATERIAL_ITEMS.values().forEach(event::accept);
+
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS)
+            RAW_MATERIAL_ITEMS.values().forEach(event::accept);
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
         {
@@ -224,6 +228,15 @@ public class ExampleMod
 
                 return 0xFFFFFF;
             }, item.get()));
+
+            RAW_MATERIAL_ITEMS.values().forEach(item -> event.register((stack, tintIndex) -> {
+                if (tintIndex == 0 && item.get() instanceof ConfiguredRawOreItem rawOreItem)
+                {
+                    return rawOreItem.oreColor();
+                }
+
+                return 0xFFFFFF;
+            }, item.get()));
         }
     }
 
@@ -238,6 +251,14 @@ public class ExampleMod
 
         for (MaterialConfig.MaterialDefinition material : materials)
         {
+            if (material.generateRawOre())
+            {
+                RegistryObject<Item> rawOre = ITEMS.register(
+                        "raw_" + material.id(),
+                        () -> new ConfiguredRawOreItem(new Item.Properties(), material));
+                RAW_MATERIAL_ITEMS.put(material.id(), rawOre);
+            }
+
             if (material.generateOre())
             {
                 registerMaterialBlock(material.id() + "_ore", material, false, false);

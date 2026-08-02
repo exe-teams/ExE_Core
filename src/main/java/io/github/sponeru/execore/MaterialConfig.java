@@ -119,6 +119,7 @@ public final class MaterialConfig
 
     private static void readGenerateValue(Map<String, String> current, String line)
     {
+        readGenerateBoolean(current, line, "raw_ore");
         readGenerateBoolean(current, line, "dense_ore");
         readGenerateBoolean(current, line, "ore");
     }
@@ -148,11 +149,12 @@ public final class MaterialConfig
         id = id.toLowerCase(Locale.ROOT);
         int color = readColor(values.get("color"), 0xFFFFFF);
         int denseFactor = Math.max(1, readInt(values.get("dense_factor"), 4));
+        boolean generateRawOre = readBoolean(values.get("generate.raw_ore"), false);
         boolean generateOre = readBoolean(values.get("generate.ore"), true);
         boolean generateDenseOre = readBoolean(values.get("generate.dense_ore"), true);
         ResourceLocation drop = readDrop(values.get("drop"));
 
-        return new MaterialDefinition(id, color, denseFactor, drop, generateOre, generateDenseOre);
+        return new MaterialDefinition(id, color, denseFactor, drop, generateRawOre, generateOre, generateDenseOre);
     }
 
     private static ResourceLocation readDrop(String value)
@@ -244,9 +246,9 @@ public final class MaterialConfig
     private static List<MaterialDefinition> defaultMaterials()
     {
         return List.of(
-                new MaterialDefinition("iron", 0x6F6F6F, 4, null, false, true),
-                new MaterialDefinition("diamond", 0x00FF00, 4, null, false, true),
-                new MaterialDefinition("quartz", 0xFFFFFF, 4, ForgeRegistries.ITEMS.getKey(Items.QUARTZ), true, true));
+                new MaterialDefinition("iron", 0x6F6F6F, 4, null, true, false, true),
+                new MaterialDefinition("diamond", 0x00FF00, 4, null, true, false, true),
+                new MaterialDefinition("quartz", 0xFFFFFF, 4, ForgeRegistries.ITEMS.getKey(Items.QUARTZ), true, true, true));
     }
 
     private static String defaultMaterialToml()
@@ -257,31 +259,37 @@ public final class MaterialConfig
                 # color: ore overlay color.
                 # dense_factor: item count dropped by dense ores without Silk Touch.
                 # drop: optional item id. If omitted, ExE Core uses common vanilla raw/drop items or minecraft:<id>.
-                # generate: ore and dense_ore control normal and dense ore variants.
+                # generate: raw_ore, ore and dense_ore control raw items and ore variants.
+                # When raw_ore is enabled, generated normal and dense ores drop the generated raw item.
 
                 [[material]]
                 id = "iron"
                 color = 0x6f6f6f
                 dense_factor = 4
-                generate = { ore = false, dense_ore = true }
+                generate = { raw_ore = true, ore = false, dense_ore = true }
 
                 [[material]]
                 id = "diamond"
                 color = 0x00ff00
                 dense_factor = 4
-                generate = { ore = false, dense_ore = true }
+                generate = { raw_ore = true, ore = false, dense_ore = true }
 
                 [[material]]
                 id = "quartz"
                 color = 0xffffff
                 dense_factor = 4
                 drop = "minecraft:quartz"
-                generate = { ore = true, dense_ore = true }
+                generate = { raw_ore = true, ore = true, dense_ore = true }
                 """;
     }
 
-    public record MaterialDefinition(String id, int color, int denseFactor, ResourceLocation drop, boolean generateOre, boolean generateDenseOre)
+    public record MaterialDefinition(String id, int color, int denseFactor, ResourceLocation drop, boolean generateRawOre, boolean generateOre, boolean generateDenseOre)
     {
+        public ResourceLocation rawOreId()
+        {
+            return new ResourceLocation(ExampleMod.MODID, "raw_" + id);
+        }
+
         public ResourceLocation dropId()
         {
             if (drop != null)

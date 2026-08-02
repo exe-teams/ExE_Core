@@ -91,6 +91,16 @@ public class ConfiguredOreBlock extends Block
             return List.of(new ItemStack(this));
         }
 
+        if (material.generateRawOre())
+        {
+            Item rawOre = ForgeRegistries.ITEMS.getValue(material.rawOreId());
+
+            if (rawOre != null && rawOre != Items.AIR)
+            {
+                return splitStacks(rawOre, dense ? material.denseFactor() : 1);
+            }
+        }
+
         if (dense && material.drop() == null)
         {
             List<ItemStack> originalOreDrops = getOriginalOreDrops(params);
