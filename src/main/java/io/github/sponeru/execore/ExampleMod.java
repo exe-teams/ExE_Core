@@ -211,6 +211,11 @@ public class ExampleMod
                     return oreBlock.oreColor();
                 }
 
+                if (tintIndex == 0 && state.getBlock() instanceof ConfiguredRawOreBlock rawOreBlock)
+                {
+                    return rawOreBlock.oreColor();
+                }
+
                 return 0xFFFFFF;
             }, block.get()));
         }
@@ -224,6 +229,11 @@ public class ExampleMod
                 if (tintIndex == 0 && block != null && block.get() instanceof ConfiguredOreBlock oreBlock)
                 {
                     return oreBlock.oreColor();
+                }
+
+                if (tintIndex == 0 && block != null && block.get() instanceof ConfiguredRawOreBlock rawOreBlock)
+                {
+                    return rawOreBlock.oreColor();
                 }
 
                 return 0xFFFFFF;
@@ -257,6 +267,7 @@ public class ExampleMod
                         "raw_" + material.id(),
                         () -> new ConfiguredRawOreItem(new Item.Properties(), material));
                 RAW_MATERIAL_ITEMS.put(material.id(), rawOre);
+                registerRawOreBlock("raw_" + material.id() + "_block", material);
             }
 
             if (material.generateOre())
@@ -276,6 +287,16 @@ public class ExampleMod
     private static void registerMaterialBlock(String id, MaterialConfig.MaterialDefinition material, boolean dense, boolean deepslate)
     {
         RegistryObject<Block> block = BLOCKS.register(id, () -> new ConfiguredOreBlock(oreProperties(deepslate), material, dense, deepslate));
+        RegistryObject<Item> item = ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+
+        MATERIAL_BLOCKS.put(id, block);
+        MATERIAL_ITEMS.put(id, item);
+    }
+
+    private static void registerRawOreBlock(String id, MaterialConfig.MaterialDefinition material)
+    {
+        RegistryObject<Block> block = BLOCKS.register(id, () -> new ConfiguredRawOreBlock(
+                BlockBehaviour.Properties.copy(Blocks.RAW_IRON_BLOCK), material));
         RegistryObject<Item> item = ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
 
         MATERIAL_BLOCKS.put(id, block);

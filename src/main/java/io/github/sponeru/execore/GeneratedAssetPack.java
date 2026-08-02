@@ -58,6 +58,7 @@ public final class GeneratedAssetPack
         List<String> needsDiamondTool = new ArrayList<>();
         Map<String, List<String>> forgeOreTags = new LinkedHashMap<>();
         Map<String, List<String>> forgeRawMaterialTags = new LinkedHashMap<>();
+        Map<String, List<String>> forgeStorageBlockTags = new LinkedHashMap<>();
         Map<String, List<String>> denseOreTags = new LinkedHashMap<>();
 
         for (MaterialConfig.MaterialDefinition material : materials)
@@ -68,6 +69,11 @@ public final class GeneratedAssetPack
             {
                 writeRawOreItemModel(itemModels, material.id());
                 forgeRawMaterialTags.put(material.id(), List.of(ExampleMod.MODID + ":raw_" + material.id()));
+                String rawOreBlock = "raw_" + material.id() + "_block";
+                List<String> rawOreBlocks = new ArrayList<>();
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, rawOreBlocks, rawOreBlock, "template_raw_ore_block");
+                addToolTierBlocks(material.id(), rawOreBlocks, needsStoneTool, needsIronTool, needsDiamondTool);
+                forgeStorageBlockTags.put("raw_" + material.id(), rawOreBlocks);
             }
 
             if (material.generateOre())
@@ -95,7 +101,7 @@ public final class GeneratedAssetPack
         }
 
         writeTags(root, pickaxeMineable, needsStoneTool, needsIronTool, needsDiamondTool,
-                forgeOreTags, forgeRawMaterialTags, denseOreTags);
+                forgeOreTags, forgeRawMaterialTags, forgeStorageBlockTags, denseOreTags);
         generatedRoot = root;
         return root;
     }
@@ -163,19 +169,26 @@ public final class GeneratedAssetPack
                                   List<String> needsIronTool, List<String> needsDiamondTool,
                                   Map<String, List<String>> forgeOreTags,
                                   Map<String, List<String>> forgeRawMaterialTags,
+                                  Map<String, List<String>> forgeStorageBlockTags,
                                   Map<String, List<String>> denseOreTags) throws IOException
     {
         Path minecraftBlockTags = root.resolve("data").resolve("minecraft").resolve("tags").resolve("blocks");
         Path forgeBlockTags = root.resolve("data").resolve("forge").resolve("tags").resolve("blocks");
-        Path forgeOreTagPath = forgeBlockTags.resolve("ores");
+        Path forgeOreBlockTagPath = forgeBlockTags.resolve("ores");
+        Path forgeOreItemTagPath = root.resolve("data").resolve("forge").resolve("tags").resolve("items").resolve("ores");
         Path forgeRawMaterialTagPath = root.resolve("data").resolve("forge").resolve("tags").resolve("items").resolve("raw_materials");
+        Path forgeStorageBlockBlockTagPath = forgeBlockTags.resolve("storage_blocks");
+        Path forgeStorageBlockItemTagPath = root.resolve("data").resolve("forge").resolve("tags").resolve("items").resolve("storage_blocks");
         Path exeCoreTags = root.resolve("data").resolve(ExampleMod.MODID).resolve("tags");
         Path denseOreBlockTagPath = exeCoreTags.resolve("blocks").resolve("dense_ores");
         Path denseOreItemTagPath = exeCoreTags.resolve("items").resolve("dense_ores");
 
         Files.createDirectories(minecraftBlockTags.resolve("mineable"));
-        Files.createDirectories(forgeOreTagPath);
+        Files.createDirectories(forgeOreBlockTagPath);
+        Files.createDirectories(forgeOreItemTagPath);
         Files.createDirectories(forgeRawMaterialTagPath);
+        Files.createDirectories(forgeStorageBlockBlockTagPath);
+        Files.createDirectories(forgeStorageBlockItemTagPath);
         Files.createDirectories(denseOreBlockTagPath);
         Files.createDirectories(denseOreItemTagPath);
 
@@ -189,12 +202,21 @@ public final class GeneratedAssetPack
 
         for (Map.Entry<String, List<String>> entry : forgeOreTags.entrySet())
         {
-            Files.writeString(forgeOreTagPath.resolve(entry.getKey() + ".json"), tagJson(entry.getValue()));
+            String json = tagJson(entry.getValue());
+            Files.writeString(forgeOreBlockTagPath.resolve(entry.getKey() + ".json"), json);
+            Files.writeString(forgeOreItemTagPath.resolve(entry.getKey() + ".json"), json);
         }
 
         for (Map.Entry<String, List<String>> entry : forgeRawMaterialTags.entrySet())
         {
             Files.writeString(forgeRawMaterialTagPath.resolve(entry.getKey() + ".json"), tagJson(entry.getValue()));
+        }
+
+        for (Map.Entry<String, List<String>> entry : forgeStorageBlockTags.entrySet())
+        {
+            String json = tagJson(entry.getValue());
+            Files.writeString(forgeStorageBlockBlockTagPath.resolve(entry.getKey() + ".json"), json);
+            Files.writeString(forgeStorageBlockItemTagPath.resolve(entry.getKey() + ".json"), json);
         }
 
         for (Map.Entry<String, List<String>> entry : denseOreTags.entrySet())

@@ -43,6 +43,7 @@
   "block.execore.deepslate_ore": "Deepslate %s Ore",
   "block.execore.dense_ore": "Dense %s Ore",
   "block.execore.dense_deepslate_ore": "Dense Deepslate %s Ore",
+  "block.execore.raw_ore_block": "Block of Raw %s",
   "item.execore.raw_ore": "Raw %s",
   "material.execore.iron": "Iron",
   "material.execore.copper": "Copper",

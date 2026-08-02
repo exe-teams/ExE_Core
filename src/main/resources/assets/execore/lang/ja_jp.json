@@ -43,6 +43,7 @@
   "block.execore.deepslate_ore": "深層%s鉱石",
   "block.execore.dense_ore": "高密度%s鉱石",
   "block.execore.dense_deepslate_ore": "高密度深層%s鉱石",
+  "block.execore.raw_ore_block": "%sの原石ブロック",
   "item.execore.raw_ore": "%sの原石",
   "material.execore.iron": "鉄",
   "material.execore.copper": "銅",
