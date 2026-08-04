@@ -2,6 +2,7 @@ package io.github.sponeru.execore;
 
 import com.electronwill.nightconfig.core.UnmodifiableConfig;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -12,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.slf4j.Logger;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @Mod.EventBusSubscriber(modid = ExampleMod.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config
 {
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
     private static final ForgeConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
@@ -46,6 +49,37 @@ public class Config
             .comment("A list of items to log on common setup.")
             .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
 
+    private static final ForgeConfigSpec.BooleanValue ASTRAL_ORE_PROCESSING_ENABLED;
+    private static final ForgeConfigSpec.IntValue ASTRAL_RECONSTRUCTION_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_NUCLEOSYNTHESIS_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_COMPRESSION_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_DISSOLUTION_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_WASHING_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_CRYSTALLIZING_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_INJECTING_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_PURIFYING_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_CRUSHING_OUTPUT;
+    private static final ForgeConfigSpec.IntValue ASTRAL_ENRICHING_OUTPUT;
+
+    static
+    {
+        BUILDER.push("astralOreProcessing");
+        ASTRAL_ORE_PROCESSING_ENABLED = BUILDER
+                .comment("Generate the independent ExE Core ore-processing chain for Astral Mekanism.")
+                .define("enabled", true);
+        ASTRAL_RECONSTRUCTION_OUTPUT = stageOutput("reconstructionOutput", 8);
+        ASTRAL_NUCLEOSYNTHESIS_OUTPUT = stageOutput("nucleosynthesisOutput", 6);
+        ASTRAL_COMPRESSION_OUTPUT = stageOutput("compressionOutput", 4);
+        ASTRAL_DISSOLUTION_OUTPUT = stageOutput("dissolutionSlurryOutput", 100);
+        ASTRAL_WASHING_OUTPUT = stageOutput("washingSlurryOutput", 100);
+        ASTRAL_CRYSTALLIZING_OUTPUT = stageOutput("crystallizingOutput", 1);
+        ASTRAL_INJECTING_OUTPUT = stageOutput("injectingOutput", 3);
+        ASTRAL_PURIFYING_OUTPUT = stageOutput("purifyingOutput", 2);
+        ASTRAL_CRUSHING_OUTPUT = stageOutput("crushingOutput", 2);
+        ASTRAL_ENRICHING_OUTPUT = stageOutput("enrichingOutput", 2);
+        BUILDER.pop();
+    }
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     public static boolean logDirtBlock;
@@ -53,6 +87,13 @@ public class Config
     public static String magicNumberIntroduction;
     public static Set<Item> items;
     public static List<VeinGroup> veinGroups = defaultVeinGroups();
+    public static AstralOreProcessing astralOreProcessing = AstralOreProcessing.defaults();
+
+    private static ForgeConfigSpec.IntValue stageOutput(String name, int defaultValue)
+    {
+        return BUILDER.comment("Base output for this stage. A material's astral_multiplier is applied afterwards.")
+                .defineInRange(name, defaultValue, 1, Integer.MAX_VALUE);
+    }
 
     private static boolean validateItemName(final Object obj)
     {
@@ -62,6 +103,11 @@ public class Config
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event)
     {
+        if (event.getConfig().getSpec() != SPEC)
+        {
+            return;
+        }
+
         logDirtBlock = LOG_DIRT_BLOCK.get();
         magicNumber = MAGIC_NUMBER.get();
         magicNumberIntroduction = MAGIC_NUMBER_INTRODUCTION.get();
@@ -72,6 +118,27 @@ public class Config
                 .collect(Collectors.toSet());
 
         veinGroups = loadOreVeinConfig();
+        astralOreProcessing = new AstralOreProcessing(
+                ASTRAL_ORE_PROCESSING_ENABLED.get(),
+                ASTRAL_RECONSTRUCTION_OUTPUT.get(),
+                ASTRAL_NUCLEOSYNTHESIS_OUTPUT.get(),
+                ASTRAL_COMPRESSION_OUTPUT.get(),
+                ASTRAL_DISSOLUTION_OUTPUT.get(),
+                ASTRAL_WASHING_OUTPUT.get(),
+                ASTRAL_CRYSTALLIZING_OUTPUT.get(),
+                ASTRAL_INJECTING_OUTPUT.get(),
+                ASTRAL_PURIFYING_OUTPUT.get(),
+                ASTRAL_CRUSHING_OUTPUT.get(),
+                ASTRAL_ENRICHING_OUTPUT.get());
+
+        try
+        {
+            GeneratedAssetPack.refreshIfGenerated(MaterialConfig.load());
+        }
+        catch (Exception exception)
+        {
+            LOGGER.error("Failed to refresh ExE Core generated assets after loading config", exception);
+        }
     }
 
     private static List<VeinGroup> loadOreVeinConfig()
@@ -255,6 +322,17 @@ public class Config
 
     public record WeightedBlock(Block block, int weight)
     {
+    }
+
+    public record AstralOreProcessing(boolean enabled, int reconstructionOutput, int nucleosynthesisOutput,
+                                      int compressionOutput, int dissolutionOutput, int washingOutput,
+                                      int crystallizingOutput, int injectingOutput, int purifyingOutput,
+                                      int crushingOutput, int enrichingOutput)
+    {
+        private static AstralOreProcessing defaults()
+        {
+            return new AstralOreProcessing(true, 8, 6, 4, 100, 100, 1, 3, 2, 2, 2);
+        }
     }
 
     private static final class MthLike

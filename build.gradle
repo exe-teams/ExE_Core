@@ -141,6 +141,35 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation fg.deobf("curse.maven:mekanism-${mekanism_curse_project_id}:${mekanism_curse_file_id}")
     implementation fg.deobf("curse.maven:curios-309927:6418456")
+    implementation fg.deobf("curse.maven:astral-mekanism-1415150:8299719")
+
+    // Runtime prerequisites required by Astral Mekanism 1.8.2.
+    runtimeOnly fg.deobf("curse.maven:ae2addonlib-1366135:7668681")
+    runtimeOnly fg.deobf("curse.maven:stack-upgrade-integration-1510741:8298822")
+    runtimeOnly fg.deobf("curse.maven:mekanism-generators-268566:6552914")
+    runtimeOnly fg.deobf("curse.maven:jei-238222:6600311")
+    runtimeOnly fg.deobf("curse.maven:mekanism-tools-268567:6552915")
+    runtimeOnly fg.deobf("curse.maven:evolved-mekanism-1230085:7599591")
+    runtimeOnly fg.deobf("curse.maven:mega-cells-622112:6175008")
+    runtimeOnly fg.deobf("curse.maven:evolved-mekanism-extras-1268159:8294797")
+    runtimeOnly fg.deobf("curse.maven:mekanism-elements-1103224:6537553")
+    runtimeOnly fg.deobf("curse.maven:applied-energistics-2-223794:7148487")
+    runtimeOnly fg.deobf("curse.maven:compact-mekanism-machines-1161015:7388773")
+    runtimeOnly fg.deobf("curse.maven:advancedae-1084104:7939754")
+    runtimeOnly fg.deobf("curse.maven:mekanism-extras-1026040:8247562")
+    runtimeOnly fg.deobf("curse.maven:botany-pots-353928:7612402")
+    runtimeOnly fg.deobf("curse.maven:applied-flux-965012:7651647")
+    runtimeOnly fg.deobf("curse.maven:applied-mekanistics-574300:7244744")
+
+    // Transitive runtime prerequisites not published through CurseMaven metadata.
+    runtimeOnly fg.deobf("curse.maven:cloth-config-348521:5729105")
+    runtimeOnly fg.deobf("curse.maven:bookshelf-228525:7612389")
+    runtimeOnly fg.deobf("curse.maven:iglee-library-541199:6987117")
+    runtimeOnly fg.deobf("curse.maven:glodium-957920:5226922")
+    runtimeOnly fg.deobf("curse.maven:guideme-1173950:8204776")
+    runtimeOnly fg.deobf("curse.maven:geckolib-388172:8285794")
+    runtimeOnly fg.deobf("curse.maven:bigger-stacks-564896:8263248")
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
@@ -158,6 +187,10 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 // When "copyIdeResources" is enabled, this will also run before the game launches in IDE environments.
@@ -167,7 +200,9 @@ tasks.named('processResources', ProcessResources).configure {
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
             loader_version_range: loader_version_range,
-            mekanism_version_range: mekanism_version_range, curios_version_range: curios_version_range,
+            mekanism_version_range: mekanism_version_range,
+            astral_mekanism_version_range: astral_mekanism_version_range,
+            curios_version_range: curios_version_range,
             mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
             mod_authors: mod_authors, mod_description: mod_description,
     ]

@@ -1,4 +1,45 @@
 
+Astral Mekanism ore processing
+==============================
+
+ExE Core 1.0 requires Astral Mekanism 1.8.2 or newer. For every material in
+config/execore-materials.toml, ExE Core independently registers the intermediate
+items and slurries and generates this processing chain:
+
+The development runtime resolves Astral Mekanism from CurseMaven using
+curse.maven:astral-mekanism-1415150:8299719. It is declared as a Gradle
+implementation dependency, so it is available on both compile and runtime
+classpaths without bundling its source code into ExE Core.
+
+reconstruction -> nucleosynthesizing -> compressing -> dissolution -> washing
+-> crystallizing -> injecting -> purifying -> crushing -> enriching
+
+Per-material controls:
+- generate.astral_processing: enable or disable the chain for that material.
+- astral_multiplier: multiply every stage output for that material.
+- astral_output: optional final item id produced by enriching. It defaults to drop.
+
+Normal ores can enter the same intermediate item stages as Astral Mekanism's
+native processing. Dense ores use execore:dense_ores/<material> so they do not
+overlap any unscaled normal-ore input. Every recipe that directly processes a
+dense ore applies dense_factor, including reconstruction, nucleosynthesizing,
+compressing, dissolution, injecting and purifying.
+
+Example: astral_output = "minecraft:emerald"
+
+Global stage outputs are in config/execore-common.toml under
+[astralOreProcessing]. Item and slurry outputs have no gameplay cap after applying
+the per-material multiplier. Dense reconstruction uses the exact reconstruction
+output x astral_multiplier x dense_factor value. Values beyond Java's integer
+range are clamped only to prevent numeric overflow.
+
+The same stage output settings also override Astral Mekanism's native
+unique-processing recipes. ExE Core preserves each native recipe's inputs,
+chemicals, duration and output item, and changes only its output count or amount.
+
+The integration targets Astral Mekanism's public recipe and registry contracts.
+No Astral Mekanism source code is copied into ExE Core.
+
 Source installation information for modders
 -------------------------------------------
 This code follows the Minecraft Forge installation methodology. It will apply

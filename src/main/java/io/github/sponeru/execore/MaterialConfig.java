@@ -122,6 +122,8 @@ public final class MaterialConfig
         readGenerateBoolean(current, line, "raw_ore");
         readGenerateBoolean(current, line, "dense_ore");
         readGenerateBoolean(current, line, "ore");
+        readGenerateBoolean(current, line, "astral_processing");
+        readGenerateBoolean(current, line, "mekanism_processing");
     }
 
     private static void readGenerateBoolean(Map<String, String> current, String line, String key)
@@ -152,9 +154,31 @@ public final class MaterialConfig
         boolean generateRawOre = readBoolean(values.get("generate.raw_ore"), false);
         boolean generateOre = readBoolean(values.get("generate.ore"), true);
         boolean generateDenseOre = readBoolean(values.get("generate.dense_ore"), true);
+        boolean generateAstralProcessing = readBoolean(values.get("generate.astral_processing"), true);
+        boolean generateMekanismProcessing = readBoolean(values.get("generate.mekanism_processing"), true);
+        double astralMultiplier = Math.max(0.01D, readDouble(values.get("astral_multiplier"), 1.0D));
         ResourceLocation drop = readDrop(values.get("drop"));
+        ResourceLocation astralOutput = readResourceLocation(values.get("astral_output"));
 
-        return new MaterialDefinition(id, color, denseFactor, drop, generateRawOre, generateOre, generateDenseOre);
+        return new MaterialDefinition(id, color, denseFactor, drop, astralOutput, generateRawOre, generateOre,
+                generateDenseOre, generateAstralProcessing, generateMekanismProcessing, astralMultiplier);
+    }
+
+    private static ResourceLocation readResourceLocation(String value)
+    {
+        if (value == null || value.isBlank())
+        {
+            return null;
+        }
+
+        try
+        {
+            return new ResourceLocation(value.contains(":") ? value : "minecraft:" + value);
+        }
+        catch (Exception ignored)
+        {
+            return null;
+        }
     }
 
     private static ResourceLocation readDrop(String value)
@@ -233,6 +257,23 @@ public final class MaterialConfig
         }
     }
 
+    private static double readDouble(String value, double fallback)
+    {
+        if (value == null || value.isBlank())
+        {
+            return fallback;
+        }
+
+        try
+        {
+            return Double.parseDouble(value);
+        }
+        catch (NumberFormatException ignored)
+        {
+            return fallback;
+        }
+    }
+
     private static boolean readBoolean(String value, boolean fallback)
     {
         if (value == null || value.isBlank())
@@ -246,9 +287,9 @@ public final class MaterialConfig
     private static List<MaterialDefinition> defaultMaterials()
     {
         return List.of(
-                new MaterialDefinition("iron", 0x6F6F6F, 4, null, true, false, true),
-                new MaterialDefinition("diamond", 0x00FF00, 4, null, true, false, true),
-                new MaterialDefinition("quartz", 0xFFFFFF, 4, ForgeRegistries.ITEMS.getKey(Items.QUARTZ), true, true, true));
+                new MaterialDefinition("iron", 0x6F6F6F, 4, null, null, true, false, true, true, true, 1.0D),
+                new MaterialDefinition("diamond", 0x00FF00, 4, null, null, true, false, true, true, true, 1.0D),
+                new MaterialDefinition("quartz", 0xFFFFFF, 4, ForgeRegistries.ITEMS.getKey(Items.QUARTZ), null, true, true, true, true, true, 1.0D));
     }
 
     private static String defaultMaterialToml()
@@ -259,31 +300,43 @@ public final class MaterialConfig
                 # color: ore overlay color.
                 # dense_factor: item count dropped by dense ores without Silk Touch.
                 # drop: optional item id. If omitted, ExE Core uses common vanilla raw/drop items or minecraft:<id>.
-                # generate: raw_ore, ore and dense_ore control raw items and ore variants.
+                # astral_output: optional final item from Astral enriching. If omitted, ExE Core uses drop.
+                # generate: raw_ore, ore, dense_ore, astral_processing and mekanism_processing control generated content.
+                # astral_multiplier: scales every Astral processing stage for this material (minimum 0.01).
                 # When raw_ore is enabled, generated normal and dense ores drop the generated raw item.
 
                 [[material]]
                 id = "iron"
                 color = 0x6f6f6f
                 dense_factor = 4
-                generate = { raw_ore = true, ore = false, dense_ore = true }
+                astral_output = "minecraft:raw_iron"
+                astral_multiplier = 1.0
+                generate = { raw_ore = true, ore = false, dense_ore = true, astral_processing = true, mekanism_processing = true }
 
                 [[material]]
                 id = "diamond"
                 color = 0x00ff00
                 dense_factor = 4
-                generate = { raw_ore = true, ore = false, dense_ore = true }
+                astral_output = "minecraft:diamond"
+                astral_multiplier = 1.0
+                generate = { raw_ore = true, ore = false, dense_ore = true, astral_processing = true, mekanism_processing = true }
 
                 [[material]]
                 id = "quartz"
                 color = 0xffffff
                 dense_factor = 4
                 drop = "minecraft:quartz"
-                generate = { raw_ore = true, ore = true, dense_ore = true }
+                astral_output = "minecraft:quartz"
+                astral_multiplier = 1.0
+                generate = { raw_ore = true, ore = true, dense_ore = true, astral_processing = true, mekanism_processing = true }
                 """;
     }
 
-    public record MaterialDefinition(String id, int color, int denseFactor, ResourceLocation drop, boolean generateRawOre, boolean generateOre, boolean generateDenseOre)
+    public record MaterialDefinition(String id, int color, int denseFactor, ResourceLocation drop,
+                                     ResourceLocation astralOutput,
+                                     boolean generateRawOre, boolean generateOre, boolean generateDenseOre,
+                                     boolean generateAstralProcessing, boolean generateMekanismProcessing,
+                                     double astralMultiplier)
     {
         public ResourceLocation rawOreId()
         {
@@ -310,6 +363,11 @@ public final class MaterialConfig
                 case "quartz" -> ForgeRegistries.ITEMS.getKey(Items.QUARTZ);
                 default -> new ResourceLocation("minecraft", id);
             };
+        }
+
+        public ResourceLocation astralOutputId()
+        {
+            return astralOutput != null ? astralOutput : dropId();
         }
     }
 }

@@ -40,6 +40,9 @@ public final class GeneratedAssetPack
             return generatedRoot;
         }
 
+        Config.astralOreProcessing = AstralProcessingConfigReader.load(
+                FMLPaths.CONFIGDIR.get().resolve("execore-common.toml"), Config.astralOreProcessing);
+
         deleteExistingPack(root);
         Files.createDirectories(root);
         Files.writeString(root.resolve("pack.mcmeta"), PACK_MCMETA);
@@ -64,6 +67,7 @@ public final class GeneratedAssetPack
         for (MaterialConfig.MaterialDefinition material : materials)
         {
             List<String> materialBlocks = new ArrayList<>();
+            List<String> normalOreBlocks = new ArrayList<>();
 
             if (material.generateRawOre())
             {
@@ -78,32 +82,49 @@ public final class GeneratedAssetPack
 
             if (material.generateOre())
             {
-                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, material.id() + "_ore", "template_ore_stone");
-                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, "deepslate_" + material.id() + "_ore", "template_ore_deepslate");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, normalOreBlocks, material.id() + "_ore", "template_ore_stone");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, normalOreBlocks, "deepslate_" + material.id() + "_ore", "template_ore_deepslate");
+                materialBlocks.addAll(normalOreBlocks);
             }
 
             if (material.generateDenseOre())
             {
                 String denseOre = "dense_" + material.id() + "_ore";
                 String denseDeepslateOre = "dense_deepslate_" + material.id() + "_ore";
-                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, denseOre, "template_dense_ore_stone");
-                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, materialBlocks, denseDeepslateOre, "template_dense_ore_deepslate");
-                denseOreTags.put(material.id(), List.of(
-                        ExampleMod.MODID + ":" + denseOre,
-                        ExampleMod.MODID + ":" + denseDeepslateOre));
+                List<String> denseBlocks = new ArrayList<>();
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, denseBlocks, denseOre, "template_dense_ore_stone");
+                addVariant(blockstates, blockModels, itemModels, pickaxeMineable, denseBlocks, denseDeepslateOre, "template_dense_ore_deepslate");
+                materialBlocks.addAll(denseBlocks);
+                denseOreTags.put(material.id(), denseBlocks);
             }
 
             if (!materialBlocks.isEmpty())
             {
                 addToolTierBlocks(material.id(), materialBlocks, needsStoneTool, needsIronTool, needsDiamondTool);
-                forgeOreTags.put(material.id(), materialBlocks);
+                if (!normalOreBlocks.isEmpty())
+                {
+                    forgeOreTags.put(material.id(), normalOreBlocks);
+                }
             }
         }
 
         writeTags(root, pickaxeMineable, needsStoneTool, needsIronTool, needsDiamondTool,
                 forgeOreTags, forgeRawMaterialTags, forgeStorageBlockTags, denseOreTags);
+        AstralOreProcessingPack.generate(root, materials);
+        MekanismOreProcessingPack.generate(root);
         generatedRoot = root;
         return root;
+    }
+
+    static synchronized void refreshIfGenerated(List<MaterialConfig.MaterialDefinition> materials) throws IOException
+    {
+        if (generatedRoot == null)
+        {
+            return;
+        }
+
+        generatedRoot = null;
+        generate(materials);
     }
 
     private static void deleteExistingPack(Path root) throws IOException
@@ -196,9 +217,13 @@ public final class GeneratedAssetPack
         Files.writeString(minecraftBlockTags.resolve("needs_stone_tool.json"), tagJson(needsStoneTool));
         Files.writeString(minecraftBlockTags.resolve("needs_iron_tool.json"), tagJson(needsIronTool));
         Files.writeString(minecraftBlockTags.resolve("needs_diamond_tool.json"), tagJson(needsDiamondTool));
-        Files.writeString(forgeBlockTags.resolve("ores.json"), tagJson(forgeOreTags.keySet().stream()
+        List<String> allForgeOres = new ArrayList<>(forgeOreTags.keySet().stream()
                 .map(material -> "#forge:ores/" + material)
-                .toList()));
+                .toList());
+        denseOreTags.values().forEach(allForgeOres::addAll);
+        Files.writeString(forgeBlockTags.resolve("ores.json"), tagJson(allForgeOres));
+        Files.writeString(root.resolve("data").resolve("forge").resolve("tags").resolve("items")
+                .resolve("ores.json"), tagJson(allForgeOres));
 
         for (Map.Entry<String, List<String>> entry : forgeOreTags.entrySet())
         {

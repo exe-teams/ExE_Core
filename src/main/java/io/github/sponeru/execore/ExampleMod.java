@@ -1,6 +1,9 @@
 package io.github.sponeru.execore;
 
 import com.mojang.logging.LogUtils;
+import mekanism.api.MekanismAPI;
+import mekanism.api.chemical.slurry.Slurry;
+import mekanism.api.chemical.slurry.SlurryBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -62,6 +65,7 @@ public class ExampleMod
     // Create a Deferred Register to hold Items which will all be registered under the "examplemod" namespace
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(ForgeRegistries.FEATURES, MODID);
+    public static final DeferredRegister<Slurry> SLURRIES = DeferredRegister.create(MekanismAPI.SLURRY_REGISTRY_NAME, MODID);
 
     public static final RegistryObject<Feature<NoneFeatureConfiguration>> THREE_LAYER_ORE_VEIN = FEATURES.register(
             "three_layer_ore_vein",
@@ -75,12 +79,17 @@ public class ExampleMod
     public static final Map<String, RegistryObject<Block>> MATERIAL_BLOCKS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> MATERIAL_ITEMS = new LinkedHashMap<>();
     public static final Map<String, RegistryObject<Item>> RAW_MATERIAL_ITEMS = new LinkedHashMap<>();
+    public static final Map<String, RegistryObject<Item>> ASTRAL_PROCESSING_ITEMS = new LinkedHashMap<>();
+    private static final Map<String, Integer> ASTRAL_PROCESSING_COLORS = new LinkedHashMap<>();
+    public static final Map<String, RegistryObject<Slurry>> ASTRAL_PROCESSING_SLURRIES = new LinkedHashMap<>();
     private static boolean materialBlocksRegistered;
 
     public ExampleMod(FMLJavaModLoadingContext context)
     {
         IEventBus modEventBus = context.getModEventBus();
-        registerMaterialBlocks(MaterialConfig.load());
+        List<MaterialConfig.MaterialDefinition> materials = MaterialConfig.load();
+        MekanismOreProcessingPack.prepare(materials);
+        registerMaterialBlocks(materials);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
@@ -91,6 +100,7 @@ public class ExampleMod
         // Register the Deferred Register to the mod event bus so items get registered
         ITEMS.register(modEventBus);
         FEATURES.register(modEventBus);
+        SLURRIES.register(modEventBus);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
@@ -126,7 +136,11 @@ public class ExampleMod
             MATERIAL_ITEMS.values().forEach(event::accept);
 
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS)
+        {
             RAW_MATERIAL_ITEMS.values().forEach(event::accept);
+            ASTRAL_PROCESSING_ITEMS.values().forEach(event::accept);
+            MekanismOreProcessingPack.addCreative(event);
+        }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
         {
@@ -247,6 +261,10 @@ public class ExampleMod
 
                 return 0xFFFFFF;
             }, item.get()));
+
+            ASTRAL_PROCESSING_ITEMS.forEach((id, item) -> event.register((stack, tintIndex) ->
+                    tintIndex == 0 ? ASTRAL_PROCESSING_COLORS.getOrDefault(id, 0xFFFFFF) : 0xFFFFFF, item.get()));
+            MekanismOreProcessingPack.registerItemColors(event);
         }
     }
 
@@ -261,6 +279,12 @@ public class ExampleMod
 
         for (MaterialConfig.MaterialDefinition material : materials)
         {
+            if (material.generateAstralProcessing()
+                    && !AstralShiningResolver.hasNativeProcessing(material.id()))
+            {
+                registerAstralProcessing(material);
+            }
+
             if (material.generateRawOre())
             {
                 RegistryObject<Item> rawOre = ITEMS.register(
@@ -282,6 +306,40 @@ public class ExampleMod
                 registerMaterialBlock("dense_deepslate_" + material.id() + "_ore", material, true, true);
             }
         }
+    }
+
+    private static void registerAstralProcessing(MaterialConfig.MaterialDefinition material)
+    {
+        String[] stages = {
+                "reconstructed", "enriched", "sparkling", "shining_crystal",
+                "shining_shard", "shining_clump", "shining_dust"
+        };
+
+        for (String stage : stages)
+        {
+            String itemId = astralItemId(stage, material.id());
+            AstralShiningResolver.Selection selection = AstralShiningResolver.resolve(material.id(), stage);
+
+            if (selection.fallback())
+            {
+                RegistryObject<Item> item = ITEMS.register(itemId, () -> new Item(new Item.Properties()));
+                ASTRAL_PROCESSING_ITEMS.put(itemId, item);
+                ASTRAL_PROCESSING_COLORS.put(itemId, material.color());
+            }
+        }
+
+        String specificId = "astral_specific_" + material.id() + "_slurry";
+        String shiningId = "astral_shining_" + material.id() + "_slurry";
+        ASTRAL_PROCESSING_SLURRIES.put(specificId, SLURRIES.register(specificId,
+                () -> new Slurry(SlurryBuilder.dirty().tint(material.color()))));
+        ASTRAL_PROCESSING_SLURRIES.put(shiningId, SLURRIES.register(shiningId,
+                () -> new Slurry(SlurryBuilder.clean().tint(material.color()))));
+    }
+
+    private static String astralItemId(String stage, String materialId)
+    {
+        boolean isOre = !stage.startsWith("shining_");
+        return "astral_" + stage + "_" + materialId + (isOre ? "_ore" : "");
     }
 
     private static void registerMaterialBlock(String id, MaterialConfig.MaterialDefinition material, boolean dense, boolean deepslate)
