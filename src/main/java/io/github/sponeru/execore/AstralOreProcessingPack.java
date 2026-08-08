@@ -62,7 +62,7 @@ public final class AstralOreProcessingPack
 
         for (MaterialConfig.MaterialDefinition material : materials)
         {
-            if (!material.generateAstralProcessing() || !ForgeRegistries.ITEMS.containsKey(material.dropId()))
+            if (!material.generateAstralProcessing() || !hasProcessingFeedstock(material))
             {
                 continue;
             }
@@ -228,7 +228,10 @@ public final class AstralOreProcessingPack
             values.add(ExampleMod.MODID + ":deepslate_" + material.id() + "_ore");
         }
 
-        values.add(material.dropId().toString());
+        if (ForgeRegistries.ITEMS.containsKey(material.dropId()))
+        {
+            values.add(material.dropId().toString());
+        }
         Files.writeString(path, tagJson(values));
     }
 
@@ -311,8 +314,42 @@ public final class AstralOreProcessingPack
         Files.writeString(materialRoot.resolve("crushing.json"), itemRecipe(
                 "mekanism:crushing", clump, dust, itemOutput(values.crushingOutput(), material)));
         Files.writeString(materialRoot.resolve("enriching.json"), itemRecipe(
-                "mekanism:enriching", dust, material.astralOutputId().toString(),
+                "mekanism:enriching", dust, processingOutputId(material).toString(),
                 itemOutput(values.enrichingOutput(), material)));
+    }
+
+    /**
+     * A newly configured material can use its ExE Core-generated raw ore or ore blocks as
+     * Astral feedstock before any external item with the material's id exists.
+     */
+    static boolean hasProcessingFeedstock(MaterialConfig.MaterialDefinition material)
+    {
+        return material.generateRawOre() || material.generateOre()
+                || ForgeRegistries.ITEMS.containsKey(material.dropId());
+    }
+
+    /**
+     * Keep the generated recipe valid for a brand-new material whose implicit minecraft:<id>
+     * drop does not exist yet. An explicit astral_output remains authoritative.
+     */
+    static ResourceLocation processingOutputId(MaterialConfig.MaterialDefinition material)
+    {
+        if (material.astralOutput() != null)
+        {
+            return material.astralOutput();
+        }
+
+        if (material.generateRawOre())
+        {
+            return material.rawOreId();
+        }
+
+        if (material.generateOre())
+        {
+            return new ResourceLocation(ExampleMod.MODID, material.id() + "_ore");
+        }
+
+        return material.dropId();
     }
 
     private static void writeDenseRecipes(Path materialRoot, MaterialConfig.MaterialDefinition material,

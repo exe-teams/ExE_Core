@@ -2,7 +2,7 @@
 Astral Mekanism ore processing
 ==============================
 
-ExE Core 1.0 requires Astral Mekanism 1.8.2 or newer. For every material in
+ExE Core 1.2 requires Astral Mekanism 1.8.2 or newer. For every material in
 config/execore-materials.toml, ExE Core independently registers the intermediate
 items and slurries and generates this processing chain:
 

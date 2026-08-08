@@ -83,6 +83,18 @@ class AstralOreProcessingPackTest
     }
 
     @Test
+    void newGeneratedOreReceivesAstralProcessingWithoutAnExistingDropItem()
+    {
+        MaterialConfig.MaterialDefinition material = new MaterialConfig.MaterialDefinition(
+                "testium", 0x123456, 4, null, null,
+                false, true, true, true, true, 1.0D);
+
+        assertTrue(AstralOreProcessingPack.hasProcessingFeedstock(material));
+        assertEquals(new ResourceLocation("execore", "testium_ore"),
+                AstralOreProcessingPack.processingOutputId(material));
+    }
+
+    @Test
     void shiningClumpUsesItsGeneratedBaseAndUntintedGlowLayer()
     {
         JsonObject model = JsonParser.parseString(AstralOreProcessingPack.itemModelJson("shining_clump"))
